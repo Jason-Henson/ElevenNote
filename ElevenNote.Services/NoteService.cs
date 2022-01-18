@@ -3,8 +3,10 @@ using ElevenNote.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Http.Results;
 
 namespace ElevenNote.Services
 {
@@ -79,14 +81,38 @@ namespace ElevenNote.Services
                 var entity =
                     ctx
                         .Notes
-                        .Single(e => e.NoteId == model.NoteId && e.OwnerId == _userId);
-                entity.Title = model.Title;
-                entity.Content = model.Content;
-                entity.ModifiedUtc = DateTimeOffset.Now;
+                        .SingleOrDefault(e => e.NoteId == model.NoteId && e.OwnerId == _userId);
+                if (entity != null)
+                {
+                    entity.Title = model.Title;
+                    entity.Content = model.Content;
+                    entity.ModifiedUtc = DateTimeOffset.Now;
 
-                return ctx.SaveChanges() == 1; 
+                    return ctx.SaveChanges() == 1;
+
+                }
+
+                return false; 
 
             }
         }
-    }
+
+        public bool DeleteNote(int noteId)
+        {
+            using (var ctx = new ApplicationDbContext())
+            {
+                var entity =
+                    ctx
+                        .Notes
+                        .SingleOrDefault(e => e.NoteId == noteId && e.OwnerId == _userId);
+                if (entity != null)
+                {
+                    ctx.Notes.Remove(entity);
+                    return ctx.SaveChanges() == 1;
+                }
+
+                return false; 
+            }
+        }
+}
 }
